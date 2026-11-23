@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1219">
+<title>匯率換算</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0b1219; --panel:#16212c; --row:#1b2834; --line:#2a3a49;
+  --act:#0e7490; --actbg:#0f3a4a; --txt:#ffffff; --sub:#c9d6e2;
+  --key:#253545; --keyop:#c2410c; --keyc:#b91c1c; --keyfn:#334155; --acc:#38bdf8; --up:#4ade80; --down:#f87171;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Noto Sans TC",sans-serif;overscroll-behavior:none}
+body{display:flex;flex-direction:column;height:100dvh}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px 8px}
+header h1{font-size:22px;margin:0;flex:1}
+#upd{font-size:14px;color:var(--sub);text-align:right;line-height:1.3}
+.iconbtn{background:var(--keyfn);border:0;color:#fff;font-size:22px;width:44px;height:44px;border-radius:12px}
+main{flex:1;min-height:0;display:flex;flex-direction:column}
+.view{display:none;flex:1;min-height:0;flex-direction:column}
+.view.on{display:flex}
+nav{display:flex;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;color:var(--sub);font-size:15px;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:22px}
+nav button.on{color:var(--acc);font-weight:700}
+
+/* converter */
+#rows{flex:1;overflow-y:auto;padding:4px 10px}
+.row{display:flex;align-items:center;gap:10px;background:var(--row);border:2px solid transparent;border-radius:14px;padding:10px 12px;margin:6px 0;min-height:68px}
+.row.on{background:var(--actbg);border-color:var(--act)}
+.flag{font-size:32px;line-height:1}
+.cc{display:flex;flex-direction:column;min-width:70px}
+.cc b{font-size:22px}
+.cc small{font-size:13px;color:var(--sub)}
+.val{flex:1;text-align:right;overflow:hidden}
+.val .n{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.val .e{font-size:15px;color:var(--acc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{font-size:12px;background:#a16207;color:#fff;border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:middle}
+.cursor{display:inline-block;width:3px;height:28px;background:var(--acc);margin-left:2px;vertical-align:middle;animation:bl 1s steps(1) infinite}
+@keyframes bl{50%{opacity:0}}
+#keypad{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px;background:var(--panel);border-top:1px solid var(--line)}
+#keypad button{height:58px;border:0;border-radius:12px;background:var(--key);color:#fff;font-size:28px;font-weight:600}
+#keypad button:active{filter:brightness(1.4)}
+#keypad .op{background:var(--keyop)}
+#keypad .c{background:var(--keyc)}
+#keypad .fn{background:var(--keyfn);font-size:24px}
+.toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#000c;color:#fff;padding:10px 18px;border-radius:20px;font-size:16px;z-index:99;display:none}
+
+/* chart */
+.pad{padding:12px 14px;overflow-y:auto;flex:1}
+.pair{display:flex;align-items:center;gap:8px;background:var(--row);border-radius:14px;padding:10px}
+select,input{background:#0f1a24;color:#fff;border:1px solid var(--line);border-radius:10px;font-size:20px;padding:10px;width:100%}
+.pair select{flex:1}
+.big{font-size:34px;font-weight:700;text-align:right;margin:12px 4px 2px;font-variant-numeric:tabular-nums}
+.chg{text-align:right;font-size:17px;margin:0 4px 10px}
+.ranges{display:flex;gap:6px;margin:8px 0}
+.ranges button{flex:1;padding:10px 0;font-size:17px;border-radius:10px;border:1px solid var(--line);background:var(--row);color:#fff}
+.ranges button.on{background:var(--act);border-color:var(--act);font-weight:700}
+.chartbox{background:var(--row);border-radius:14px;padding:10px}
+.mm{display:flex;justify-content:space-between;font-size:17px;color:var(--sub);padding:2px 6px 6px}
+.mm b{color:#fff}
+canvas{width:100%;height:280px;display:block;touch-action:none}
+#chartMsg{text-align:center;color:var(--sub);font-size:16px;padding:8px}
+
+/* gold */
+.gold{background:var(--row);border-radius:14px;padding:14px;margin-bottom:10px}
+.gold .gh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.gold .gh b{font-size:21px;color:#fde047}
+.gold .gh small{font-size:14px;color:var(--sub)}
+.gold .gn{font-size:16px;color:var(--sub);margin-bottom:8px}
+.gold .gp{display:flex;gap:10px}
+.gold .gp>div{flex:1;background:#0f1a24;border-radius:10px;padding:8px 10px}
+.gold .gp span{font-size:15px;color:var(--sub)}
+.gold .gp .v{font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.gold .gp .t{font-size:15px;color:var(--acc)}
+/* calculator */
+.seg{display:flex;gap:8px;padding:6px 10px}
+.seg button[data-m]{flex:1;padding:10px 0;font-size:18px;border-radius:12px;border:1px solid var(--line);background:var(--row);color:#fff}
+.seg button.on{background:var(--act);border-color:var(--act);font-weight:700}
+.cbox{flex:1;min-height:0;display:flex;flex-direction:column}
+.disp{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-end;padding:10px 18px;gap:6px;overflow:hidden}
+#kExpr{font-size:34px;word-break:break-all;text-align:right;line-height:1.25}
+#kRes{font-size:28px;color:var(--acc);min-height:36px;font-variant-numeric:tabular-nums}
+#kExpr.done{font-size:48px;font-weight:700}
+.kp4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:var(--panel);border-top:1px solid var(--line)}
+.kp4 button{height:64px;border:0;border-radius:14px;background:var(--key);color:#fff;font-size:30px;font-weight:600}
+.kp4 button:active{filter:brightness(1.4)}
+.kp4 .op{background:var(--keyop)} .kp4 .c{background:var(--keyc)} .kp4 .fn{background:var(--keyfn)} .kp4 .eq{background:#16a34a}
+.ucats{display:flex;gap:6px;padding:4px 10px;overflow-x:auto}
+.ucats button{flex:0 0 auto;padding:9px 16px;font-size:17px;border-radius:20px;border:1px solid var(--line);background:var(--row);color:#fff}
+.ucats button.on{background:var(--act);border-color:var(--act);font-weight:700}
+.ufield{margin:8px 10px 0;background:var(--row);border:2px solid transparent;border-radius:14px;padding:10px 12px}
+.ufield.on{border-color:var(--act);background:var(--actbg)}
+.ufield select{width:auto;font-size:18px;padding:6px 10px}
+.uv{font-size:38px;font-weight:700;text-align:right;margin-top:6px;word-break:break-all;font-variant-numeric:tabular-nums}
+/* my rates / settings */
+.card{background:var(--row);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h3{margin:0 0 10px;font-size:19px;color:var(--acc)}
+.fl{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.fl>*{flex:1}
+.fl .lab{flex:0 0 auto;font-size:18px}
+.btn{width:100%;padding:14px;font-size:19px;font-weight:700;border:0;border-radius:12px;background:var(--act);color:#fff}
+.btn.sec{background:var(--keyfn)}
+.ref{font-size:16px;color:var(--sub);margin:4px 0 10px}
+.cr{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:19px}
+.cr:first-child{border-top:0}
+.cr .t{flex:1}
+.cr .t small{display:block;font-size:14px;color:var(--sub)}
+.sw{position:relative;width:54px;height:30px;flex:0 0 auto}
+.sw input{display:none}
+.sw i{position:absolute;inset:0;background:#475569;border-radius:30px;transition:.2s}
+.sw i:before{content:"";position:absolute;width:24px;height:24px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked+i{background:var(--act)}
+.sw input:checked+i:before{transform:translateX(24px)}
+.del{background:var(--keyc);border:0;color:#fff;border-radius:10px;width:44px;height:40px;font-size:18px}
+.mv{background:var(--keyfn);border:0;color:#fff;border-radius:10px;width:44px;height:40px;font-size:18px}
+.set{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid var(--line);font-size:19px}
+.set:first-of-type{border-top:0}
+.set select{width:auto}
+.muted{color:var(--sub);font-size:15px;line-height:1.5}
+.modal{position:fixed;inset:0;background:#000b;display:none;z-index:50;align-items:flex-end}
+.modal.on{display:flex}
+.sheet{background:var(--panel);width:100%;max-height:85dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column}
+.sheet h3{margin:0;padding:16px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
+.sheet .list{overflow-y:auto;padding:0 14px 14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>匯率換算</h1>
+  <div id="upd">—</div>
+  <button class="iconbtn" id="btnRefresh" title="更新匯率">↻</button>
+</header>
+
+<main>
+  <!-- 換算 -->
+  <section class="view on" id="v-conv">
+    <div id="rows"></div>
+    <div id="keypad">
+      <button class="c" data-k="C">C</button><button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="÷">÷</button>
+      <button class="fn" data-k="BS">⌫</button><button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="×">×</button>
+      <button class="fn" data-k="ADD">＋幣</button><button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="−">−</button>
+      <button class="fn" data-k="=">=</button><button data-k="0">0</button><button data-k="00">00</button><button data-k=".">.</button><button class="op" data-k="+">+</button>
+    </div>
+  </section>
+
+  <!-- 圖表 -->
+  <section class="view" id="v-chart">
+    <div class="pad">
+      <div class="pair">
+        <select id="cFrom"></select>
+        <button class="iconbtn" id="cSwap">⇄</button>
+        <select id="cTo"></select>
+      </div>
+      <div class="fl" style="margin-top:10px"><span class="lab">金額</span><input id="cAmt" type="number" inputmode="decimal" value="1"></div>
+      <div class="big" id="cNow">—</div>
+      <div class="chg" id="cChg"></div>
+      <div class="ranges" id="ranges">
+        <button data-d="7">7日</button><button data-d="30">1月</button><button data-d="90">3月</button><button data-d="180">6月</button><button data-d="365">1年</button>
+      </div>
+      <div class="chartbox">
+        <div class="mm"><span>最低 <b id="cMin">—</b></span><span>最高 <b id="cMax">—</b></span></div>
+        <canvas id="cv"></canvas>
+        <div id="chartMsg"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 金戒指 -->
+  <section class="view" id="v-gold">
+    <div class="pad">
+      <div class="fl"><div class="muted" id="gUpd">—</div><button class="btn" id="gRefresh" style="flex:0 0 auto;width:auto;padding:10px 18px">↻ 查詢</button></div>
+      <div class="muted" style="margin-bottom:10px">9999 素面戒指，單位 VND/chỉ（1 chỉ = 3.75 克）。「買進」是店家收購價，「賣出」是你買的價格。</div>
+      <div id="gList"></div>
+    </div>
+  </section>
+
+  <!-- 計算機 -->
+  <section class="view" id="v-calc">
+    <div class="seg"><button data-m="calc" class="on">計算機</button><button data-m="unit">單位換算</button><button class="iconbtn" id="kHist" title="歷史">🕘</button></div>
+    <div class="cbox" id="calcBox">
+      <div class="disp"><div id="kExpr"></div><div id="kRes"></div></div>
+      <div class="kp4" id="kPad">
+        <button class="c" data-k="C">C</button><button class="fn" data-k="BS">⌫</button><button class="fn" data-k="%">%</button><button class="op" data-k="÷">÷</button>
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="op" data-k="×">×</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="op" data-k="−">−</button>
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="+">+</button>
+        <button class="fn" data-k="()">( )</button><button data-k="0">0</button><button data-k=".">.</button><button class="eq" data-k="=">=</button>
+      </div>
+    </div>
+    <div class="cbox" id="unitBox" style="display:none">
+      <div class="ucats" id="uCats"></div>
+      <div class="ufield" data-i="0"><select id="u0"></select><div class="uv" id="uv0"></div></div>
+      <div class="ufield" data-i="1"><select id="u1"></select><div class="uv" id="uv1"></div></div>
+      <div style="flex:1"></div>
+      <div class="kp4" id="uPad">
+        <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button><button class="c" data-k="C">C</button>
+        <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button><button class="fn" data-k="BS">⌫</button>
+        <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button><button class="op" data-k="UP">↑</button>
+        <button class="fn" data-k="PM">±</button><button data-k="0">0</button><button data-k=".">.</button><button class="op" data-k="DN">↓</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 設定 -->
+  <section class="view" id="v-set">
+    <div class="pad">
+      <div class="card">
+        <h3>畫面上的貨幣</h3>
+        <div id="sList"></div>
+        <button class="btn sec" id="sAdd" style="margin-top:10px">＋ 新增貨幣</button>
+      </div>
+      <div class="card">
+        <h3>自訂匯率（銀行價）</h3>
+        <div class="fl"><select id="mFrom"></select><span class="lab">→</span><select id="mTo"></select></div>
+        <div class="fl"><span class="lab">1 <span id="mFromLbl">USD</span> =</span><input id="mRate" type="number" inputmode="decimal" placeholder="例：銀行牌告價"></div>
+        <div class="ref" id="mRef"></div>
+        <button class="btn" id="mAdd">儲存</button>
+      </div>
+      <div class="card">
+        <h3>已設定的自訂匯率</h3>
+        <div id="mList"></div>
+        <div class="muted" style="margin-top:8px">開啟的自訂匯率會直接用在「換算」頁，該貨幣旁會標「自訂」。</div>
+      </div>
+      <div class="card">
+        <h3>金價來源（Google Apps Script 網址）</h3>
+        <input id="sGas" placeholder="https://script.google.com/macros/s/.../exec">
+        <div class="muted" style="margin-top:6px">沒填時只能查 PNJ（若 PNJ 擋住則查不到）。</div>
+      </div>
+      <div class="card">
+        <div class="set"><span>小數位數</span>
+          <select id="sPrec"><option value="auto">自動</option><option value="0">0 位</option><option value="2">2 位</option><option value="4">4 位</option></select></div>
+        <div class="set"><span>清除走勢圖快取</span><button class="del" style="width:auto;padding:0 14px" id="sClr">清除</button></div>
+      </div>
+      <div class="card muted">
+        版本 <b id="ver"></b><br>
+        匯率來源：fawazahmed0 currency-api（每日更新，中間價），備援 open.er-api.com。<br>
+        中間價與銀行買賣價會有差，要用銀行價請在上方「自訂匯率」設定。<br>
+        換算頁：長按任一貨幣可複製金額。
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav id="nav">
+  <button data-v="conv" class="on"><span>⇆</span>換算</button>
+  <button data-v="chart"><span>📈</span>圖表</button>
+  <button data-v="gold"><span>💍</span>金戒指</button>
+  <button data-v="calc"><span>🧮</span>計算機</button>
+  <button data-v="set"><span>⚙</span>設定</button>
+</nav>
+
+<div class="modal" id="addModal"><div class="sheet">
+  <h3>新增貨幣 <button class="iconbtn" id="addClose">✕</button></h3>
+  <div class="list" id="addList"></div>
+</div></div>
+<div class="modal" id="histModal"><div class="sheet">
+  <h3>計算歷史 <span><button class="del" id="histClr" style="width:auto;padding:0 12px">清除</button> <button class="iconbtn" id="histClose">✕</button></span></h3>
+  <div class="list" id="histList"></div>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const VERSION = 'v1.2.0';
+const CUR = {
+  USD:['美元','🇺🇸'], TWD:['新台幣','🇹🇼'], VND:['越南盾','🇻🇳'], JPY:['日圓','🇯🇵'], CNY:['人民幣','🇨🇳'],
+  HKD:['港幣','🇭🇰'], EUR:['歐元','🇪🇺'], GBP:['英鎊','🇬🇧'], KRW:['韓元','🇰🇷'], SGD:['新加坡幣','🇸🇬'],
+  THB:['泰銖','🇹🇭'], MYR:['馬幣','🇲🇾'], PHP:['菲律賓披索','🇵🇭'], IDR:['印尼盾','🇮🇩'], INR:['印度盧比','🇮🇳'],
+  AUD:['澳幣','🇦🇺'], NZD:['紐幣','🇳🇿'], CAD:['加幣','🇨🇦'], CHF:['瑞士法郎','🇨🇭'], MOP:['澳門幣','🇲🇴'],
+  KHR:['柬埔寨瑞爾','🇰🇭'], LAK:['寮國基普','🇱🇦'], MXN:['墨西哥披索','🇲🇽'], AED:['阿聯迪拉姆','🇦🇪']
+};
+const CODES = Object.keys(CUR);
+const $ = s => document.querySelector(s);
+
+// ---------- state ----------
+const DEF = {list:['USD','TWD','VND','JPY','CNY'], active:'TWD', expr:'1', prec:'auto', custom:[], chart:{from:'USD',to:'VND',days:30,amt:1}, myFrom:'USD', myTo:'TWD'};
+let S;
+try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem('fx_state')||'{}')); } catch(e){ S = {...DEF}; }
+const save = () => { try{ localStorage.setItem('fx_state', JSON.stringify(S)); }catch(e){} };
+let R = null; // {date, fetched, rates:{CODE: per USD}}
+try { R = JSON.parse(localStorage.getItem('fx_rates')||'null'); } catch(e){}
+
+function toast(t){ const el=$('#toast'); el.textContent=t; el.style.display='block'; clearTimeout(toast.t); toast.t=setTimeout(()=>el.style.display='none',1600); }
+
+// ---------- rates ----------
+const API1 = d => `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${d}/v1/currencies/usd.json`;
+const API2 = d => `https://${d}.currency-api.pages.dev/v1/currencies/usd.json`;
+function pick(obj){ const r={}; CODES.forEach(c=>{ const v=obj[c.toLowerCase()] ?? obj[c]; if(v) r[c]=+v; }); r.USD=1; return r; }
+async function getJSON(u){ const res = await fetch(u,{cache:'no-store'}); if(!res.ok) throw new Error(res.status); return res.json(); }
+async function fetchDay(d){
+  try { return await getJSON(API1(d)); } catch(e){ return await getJSON(API2(d)); }
+}
+async function loadRates(manual){
+  if(manual) toast('更新中…');
+  try{
+    let j, date;
+    try { j = await fetchDay('latest'); date = j.date; R = {date, fetched:Date.now(), rates:pick(j.usd)}; }
+    catch(e){ j = await getJSON('https://open.er-api.com/v6/latest/USD'); R = {date:new Date(j.time_last_update_unix*1000).toISOString().slice(0,10), fetched:Date.now(), rates:pick(j.rates)}; }
+    localStorage.setItem('fx_rates', JSON.stringify(R));
+    if(manual) toast('已更新 ✓');
+  }catch(e){ if(manual) toast('無法連線，使用上次匯率'); }
+  showUpd(); renderConv(); renderChartNow(); renderMyRef();
+}
+function showUpd(){
+  if(!R){ $('#upd').innerHTML='尚無匯率'; return; }
+  const f = new Date(R.fetched);
+  const hm = f.toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  $('#upd').innerHTML = `匯率日 ${R.date}<br>更新 ${hm}`;
+}
+function customOf(a,b){
+  for(const c of S.custom){ if(!c.on) continue;
+    if(c.from===a && c.to===b) return c.rate;
+    if(c.from===b && c.to===a) return 1/c.rate; }
+  return null;
+}
+function rate(a,b){ // 1 a = ? b
+  const c = customOf(a,b); if(c) return c;
+  if(!R || !R.rates[a] || !R.rates[b]) return NaN;
+  return R.rates[b]/R.rates[a];
+}
+
+// ---------- format ----------
+function fmt(v){
+  if(!isFinite(v)) return '—';
+  const p = S.prec, a = Math.abs(v);
+  if(p!=='auto') return v.toLocaleString('en-US',{minimumFractionDigits:+p,maximumFractionDigits:+p});
+  if(a===0) return '0';
+  if(a>=10000) return v.toLocaleString('en-US',{maximumFractionDigits:0});
+  if(a>=1) return v.toLocaleString('en-US',{maximumFractionDigits:2});
+  return v.toLocaleString('en-US',{maximumSignificantDigits:4, maximumFractionDigits:8});
+}
+function plain(v){ // for re-entering as expression
+  if(!isFinite(v)) return '0';
+  const a=Math.abs(v); let s = a>=1 ? v.toFixed(2) : v.toPrecision(4);
+  if(s.includes('.')) s = s.replace(/0+$/,'').replace(/\.$/,'');
+  return s;
+}
+
+// ---------- expression ----------
+const OPS = '+−×÷';
+function evalExpr(s){
+  if(!s) return 0;
+  const t = s.match(/(\d*\.?\d+|\d+\.|[+−×÷])/g) || [];
+  while(t.length && OPS.includes(t[t.length-1])) t.pop();
+  if(!t.length) return 0;
+  // pass 1: × ÷
+  const st=[+t[0]];
+  for(let i=1;i<t.length;i+=2){ const op=t[i], n=+t[i+1];
+    if(op==='×') st[st.length-1]*=n; else if(op==='÷') st[st.length-1]/=n; else st.push(op,n); }
+  let r=st[0]; for(let i=1;i<st.length;i+=2){ r = st[i]==='+' ? r+st[i+1] : r-st[i+1]; }
+  return r;
+}
+function key(k){
+  let e = S.expr;
+  const last = e.slice(-1), seg = e.split(/[+−×÷]/).pop();
+  if(k==='C') e='';
+  else if(k==='BS') e=e.slice(0,-1);
+  else if(k==='ADD'){ openAdd(); return; }
+  else if(k==='='){ e = plain(evalExpr(e)); }
+  else if(OPS.includes(k)){ if(!e) return; e = OPS.includes(last) ? e.slice(0,-1)+k : e+k; }
+  else if(k==='.'){ if(seg.includes('.')) return; e += seg==='' ? '0.' : '.'; }
+  else { if(e.length>=22) return; if(k==='00' && (seg===''||seg==='0')) k='0'; if(seg==='0') e = e.slice(0,-1); e += k; }
+  S.expr=e; save(); renderConv();
+}
+
+// ---------- converter ----------
+function renderConv(){
+  if(!S.list.includes(S.active)) S.active = S.list[0];
+  const amt = evalExpr(S.expr);
+  const hasOp = /[+−×÷]/.test(S.expr);
+  $('#rows').innerHTML = S.list.map(c=>{
+    const on = c===S.active;
+    let main, sub='';
+    if(on){
+      main = (S.expr ? fmt(amt) : '0') + '<span class="cursor"></span>';
+      if(hasOp) sub = S.expr;
+    } else {
+      main = fmt(amt*rate(S.active,c));
+      const cu = customOf(S.active,c);
+      if(cu) main = '<span class="badge">自訂</span>'+main;
+    }
+    return `<div class="row ${on?'on':''}" data-c="${c}">
+      <div class="flag">${CUR[c][1]}</div>
+      <div class="cc"><b>${c}</b><small>${CUR[c][0]}</small></div>
+      <div class="val"><div class="n">${main}</div>${sub?`<div class="e">${sub}</div>`:''}</div></div>`;
+  }).join('');
+}
+let pressT, pressed=false;
+$('#rows').addEventListener('pointerdown', e=>{
+  const r=e.target.closest('.row'); if(!r) return; pressed=false;
+  pressT=setTimeout(()=>{ pressed=true;
+    const c=r.dataset.c, v = c===S.active ? evalExpr(S.expr) : evalExpr(S.expr)*rate(S.active,c);
+    navigator.clipboard?.writeText(plain(v)).then(()=>toast(`已複製 ${c} ${fmt(v)}`)).catch(()=>{});
+  },550);
+});
+['pointerup','pointerleave','pointercancel'].forEach(ev=>$('#rows').addEventListener(ev,()=>clearTimeout(pressT)));
+$('#rows').addEventListener('click', e=>{
+  if(pressed) return;
+  const r=e.target.closest('.row'); if(!r) return; const c=r.dataset.c;
+  if(c===S.active) return;
+  const v = evalExpr(S.expr)*rate(S.active,c);
+  S.active=c; S.expr = S.expr ? plain(v) : ''; save(); renderConv();
+});
+$('#keypad').addEventListener('click', e=>{ const b=e.target.closest('button'); if(b){ navigator.vibrate?.(8); key(b.dataset.k);} });
+
+// ---------- manage currencies ----------
+function renderSetList(){
+  $('#sList').innerHTML = S.list.map((c,i)=>`<div class="cr"><span class="flag">${CUR[c][1]}</span>
+    <div class="t">${c}<small>${CUR[c][0]}</small></div>
+    <button class="mv" data-up="${i}">↑</button><button class="mv" data-dn="${i}">↓</button>
+    <button class="del" data-rm="${c}">✕</button></div>`).join('');
+}
+$('#sList').addEventListener('click', e=>{
+  const b=e.target; const L=S.list;
+  if(b.dataset.rm){ if(L.length<=2){ toast('至少保留 2 種'); return; } S.list=L.filter(x=>x!==b.dataset.rm); }
+  else if(b.dataset.up){ const i=+b.dataset.up; if(i>0) [L[i-1],L[i]]=[L[i],L[i-1]]; }
+  else if(b.dataset.dn){ const i=+b.dataset.dn; if(i<L.length-1) [L[i+1],L[i]]=[L[i],L[i+1]]; }
+  else return;
+  save(); renderSetList(); renderConv();
+});
+function openAdd(){
+  $('#addList').innerHTML = CODES.map(c=>`<div class="cr"><span class="flag">${CUR[c][1]}</span>
+    <div class="t">${c}<small>${CUR[c][0]}</small></div>
+    <label class="sw"><input type="checkbox" data-c="${c}" ${S.list.includes(c)?'checked':''}><i></i></label></div>`).join('');
+  $('#addModal').classList.add('on');
+}
+$('#addList').addEventListener('change', e=>{
+  const c=e.target.dataset.c; if(!c) return;
+  if(e.target.checked){ if(!S.list.includes(c)) S.list.push(c); }
+  else { if(S.list.length<=2){ e.target.checked=true; toast('至少保留 2 種'); return; } S.list=S.list.filter(x=>x!==c); }
+  save(); renderSetList(); renderConv();
+});
+$('#addClose').onclick = ()=>$('#addModal').classList.remove('on');
+$('#addModal').onclick = e=>{ if(e.target.id==='addModal') $('#addModal').classList.remove('on'); };
+$('#sAdd').onclick = openAdd;
+$('#sPrec').onchange = e=>{ S.prec=e.target.value; save(); renderConv(); renderChartNow(); };
+$('#sClr').onclick = ()=>{ Object.keys(localStorage).filter(k=>k.startsWith('h:')).forEach(k=>localStorage.removeItem(k)); toast('已清除'); };
+
+// ---------- selects ----------
+const opts = CODES.map(c=>`<option value="${c}">${CUR[c][1]} ${c} ${CUR[c][0]}</option>`).join('');
+['#mFrom','#mTo'].forEach(s=>$(s).innerHTML=opts);
+const optsShort = CODES.map(c=>`<option value="${c}">${CUR[c][1]} ${c}</option>`).join('');
+['#cFrom','#cTo'].forEach(s=>$(s).innerHTML=optsShort);
+
+// ---------- my rates ----------
+function renderMyRef(){
+  const a=$('#mFrom').value, b=$('#mTo').value;
+  $('#mFromLbl').textContent=a;
+  const m = R && R.rates[a] && R.rates[b] ? R.rates[b]/R.rates[a] : NaN;
+  const v = parseFloat($('#mRate').value);
+  let t = `市場中間價：1 ${a} = ${fmt(m)} ${b}`;
+  if(v>0 && isFinite(m)){ const d=(v/m-1)*100; t += `　差 ${d>=0?'+':''}${d.toFixed(2)}%`; }
+  $('#mRef').textContent = t;
+}
+function renderMyList(){
+  if(!S.custom.length){ $('#mList').innerHTML='<div class="muted">尚未設定</div>'; return; }
+  $('#mList').innerHTML = S.custom.map((c,i)=>`<div class="cr">
+    <div class="t">${CUR[c.from][1]} 1 ${c.from} = ${c.rate} ${c.to} ${CUR[c.to][1]}<small>設定於 ${c.d||''}</small></div>
+    <label class="sw"><input type="checkbox" data-i="${i}" ${c.on?'checked':''}><i></i></label>
+    <button class="del" data-x="${i}">✕</button></div>`).join('');
+}
+$('#mFrom').onchange = ()=>{ S.myFrom=$('#mFrom').value; save(); renderMyRef(); };
+$('#mTo').onchange = ()=>{ S.myTo=$('#mTo').value; save(); renderMyRef(); };
+$('#mRate').oninput = renderMyRef;
+$('#mAdd').onclick = ()=>{
+  const a=$('#mFrom').value, b=$('#mTo').value, v=parseFloat($('#mRate').value);
+  if(a===b){ toast('兩種貨幣不能相同'); return; }
+  if(!(v>0)){ toast('請輸入匯率'); return; }
+  S.custom = S.custom.filter(c=>!((c.from===a&&c.to===b)||(c.from===b&&c.to===a)));
+  S.custom.push({from:a,to:b,rate:v,on:true,d:new Date().toLocaleDateString('zh-TW')});
+  save(); $('#mRate').value=''; renderMyRef(); renderMyList(); renderConv(); toast('已儲存');
+};
+$('#mList').addEventListener('change', e=>{ const i=e.target.dataset.i; if(i==null) return; S.custom[i].on=e.target.checked; save(); renderConv(); });
+$('#mList').addEventListener('click', e=>{ const i=e.target.dataset.x; if(i==null) return; S.custom.splice(+i,1); save(); renderMyList(); renderConv(); });
+
+// ---------- chart ----------
+let series=[], loadId=0;
+const cv=$('#cv'), ctx=cv.getContext('2d');
+function ymd(d){ return d.toISOString().slice(0,10); }
+function renderChartNow(){
+  const a=S.chart.from, b=S.chart.to, amt=+S.chart.amt||1;
+  const m = R && R.rates[a] && R.rates[b] ? R.rates[b]/R.rates[a] : NaN;
+  $('#cNow').textContent = `${fmt(amt*m)} ${b}`;
+}
+async function loadChart(){
+  const id=++loadId, {from:a,to:b,days} = S.chart;
+  [...$('#ranges').children].forEach(x=>x.classList.toggle('on', +x.dataset.d===days));
+  renderChartNow();
+  const step = days<=30?1 : days<=90?2 : days<=180?4 : 7;
+  const dates=[]; const t=new Date(); t.setUTCDate(t.getUTCDate()-1);
+  for(let i=0;i<days;i+=step){ const d=new Date(t); d.setUTCDate(t.getUTCDate()-i); dates.push(ymd(d)); }
+  dates.reverse();
+  const pts={}; let need=[];
+  for(const d of dates){ const c=localStorage.getItem('h:'+d); if(c) pts[d]=JSON.parse(c); else need.push(d); }
+  const draw=()=>{
+    series = dates.filter(d=>pts[d]&&pts[d][a]&&pts[d][b]).map(d=>({d, v:pts[d][b]/pts[d][a]}));
+    if(R && R.rates[a] && R.rates[b] && (!series.length || series[series.length-1].d < R.date)) series.push({d:R.date, v:R.rates[b]/R.rates[a]});
+    drawChart();
+  };
+  draw();
+  let done=0; const total=need.length;
+  $('#chartMsg').textContent = total ? `載入歷史資料 0/${total}…` : '';
+  for(let i=0;i<need.length;i+=6){
+    await Promise.all(need.slice(i,i+6).map(async d=>{
+      try{ const j=await fetchDay(d); const p=pick(j.usd); pts[d]=p; try{localStorage.setItem('h:'+d, JSON.stringify(p));}catch(e){} }catch(e){}
+      done++;
+    }));
+    if(id!==loadId) return;
+    $('#chartMsg').textContent = `載入歷史資料 ${done}/${total}…`;
+    draw();
+  }
+  if(id===loadId) $('#chartMsg').textContent = series.length<2 ? '無法取得歷史資料（請檢查網路）' : '';
+}
+let hover=-1;
+function drawChart(){
+  const dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+  const amt=+S.chart.amt||1;
+  if(series.length<2){ $('#cMin').textContent=$('#cMax').textContent='—'; $('#cChg').textContent=''; return; }
+  const vs=series.map(p=>p.v*amt), mn=Math.min(...vs), mx=Math.max(...vs);
+  $('#cMin').textContent=fmt(mn); $('#cMax').textContent=fmt(mx);
+  const ch=(vs[vs.length-1]/vs[0]-1)*100;
+  const el=$('#cChg'); el.textContent=`區間 ${ch>=0?'▲ +':'▼ '}${ch.toFixed(2)}%`; el.style.color= ch>=0?'var(--up)':'var(--down)';
+  const L=8, Rr=W-8, T=14, B=H-30, span=(mx-mn)||mx*0.001||1, lo=mn-span*0.08, hi=mx+span*0.08;
+  const X=i=>L+(Rr-L)*i/(vs.length-1), Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  ctx.font='14px system-ui'; ctx.fillStyle='#c9d6e2'; ctx.strokeStyle='#2a3a49'; ctx.lineWidth=1;
+  for(let g=0;g<=3;g++){ const v=lo+(hi-lo)*g/3, y=Y(v); ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(Rr,y); ctx.stroke(); ctx.fillText(fmt(v), L+2, y-4); }
+  ctx.textAlign='center';
+  for(let g=0;g<4;g++){ const i=Math.round((vs.length-1)*g/3); const d=series[i].d.slice(5).replace('-','/'); ctx.textAlign= g===0?'left': g===3?'right':'center'; ctx.fillText(d, X(i), H-8); }
+  ctx.textAlign='left';
+  const grad=ctx.createLinearGradient(0,T,0,B); grad.addColorStop(0,'rgba(56,189,248,.45)'); grad.addColorStop(1,'rgba(56,189,248,0)');
+  ctx.beginPath(); vs.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v)));
+  ctx.lineTo(X(vs.length-1),B); ctx.lineTo(X(0),B); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+  ctx.beginPath(); vs.forEach((v,i)=>i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v))); ctx.strokeStyle='#38bdf8'; ctx.lineWidth=2.5; ctx.stroke();
+  if(hover>=0 && hover<vs.length){
+    const x=X(hover), y=Y(vs[hover]);
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,T); ctx.lineTo(x,B); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(x,y,5,0,7); ctx.fill();
+    const txt=`${series[hover].d}  ${fmt(vs[hover])}`; ctx.font='bold 16px system-ui';
+    const w=ctx.measureText(txt).width+16, bx=Math.min(Math.max(x-w/2,L),Rr-w);
+    ctx.fillStyle='#000d'; ctx.fillRect(bx,T,w,26); ctx.fillStyle='#fff'; ctx.fillText(txt,bx+8,T+19);
+  }
+}
+function hoverAt(e){ if(series.length<2) return; const r=cv.getBoundingClientRect(); const f=(e.clientX-r.left-8)/(r.width-16); hover=Math.max(0,Math.min(series.length-1,Math.round(f*(series.length-1)))); drawChart(); }
+cv.addEventListener('pointerdown', e=>{ cv.setPointerCapture(e.pointerId); hoverAt(e); });
+cv.addEventListener('pointermove', e=>{ if(e.buttons||e.pointerType==='touch') hoverAt(e); });
+cv.addEventListener('pointerup', ()=>{ setTimeout(()=>{hover=-1; drawChart();},1500); });
+$('#ranges').onclick = e=>{ const d=e.target.dataset.d; if(!d) return; S.chart.days=+d; save(); hover=-1; loadChart(); };
+$('#cFrom').onchange = ()=>{ S.chart.from=$('#cFrom').value; save(); loadChart(); };
+$('#cTo').onchange = ()=>{ S.chart.to=$('#cTo').value; save(); loadChart(); };
+$('#cSwap').onclick = ()=>{ [S.chart.from,S.chart.to]=[S.chart.to,S.chart.from]; $('#cFrom').value=S.chart.from; $('#cTo').value=S.chart.to; save(); loadChart(); };
+$('#cAmt').oninput = ()=>{ S.chart.amt=parseFloat($('#cAmt').value)||1; save(); renderChartNow(); drawChart(); };
+addEventListener('resize', ()=>drawChart());
+
+// ---------- gold ----------
+const PNJ_URL='https://edge-api.pnj.io/ecom-frontend/v1/get-gold-price?zone=00';
+function vnd(v){ return Math.round(v).toLocaleString('en-US'); }
+function renderGold(){
+  let G=null; try{ G=JSON.parse(localStorage.getItem('fx_gold')||'null'); }catch(e){}
+  if(!G){ $('#gList').innerHTML='<div class="muted">按「查詢」取得最新金戒指價格</div>'; $('#gUpd').textContent=''; return; }
+  const tw = R && R.rates.TWD && R.rates.VND ? R.rates.TWD/R.rates.VND : NaN;
+  const f=new Date(G.fetched).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  $('#gUpd').innerHTML = `查詢時間 ${f}` + (G.errors&&G.errors.length ? `<br>缺：${G.errors.join('、')}` : '');
+  const items=[...G.items].sort((a,b)=>a.sell-b.sell);
+  $('#gList').innerHTML = items.length ? items.map(it=>{
+    const sp = it.sell&&it.buy ? ((it.sell/it.buy-1)*100).toFixed(1)+'%' : '—';
+    const twd = v => isFinite(tw)&&v ? `≈ ${Math.round(v*tw).toLocaleString('en-US')} 台幣` : '';
+    return `<div class="gold"><div class="gh"><b>${it.brand}</b><small>${it.updated||''}</small></div>
+      <div class="gn">${it.name}　價差 ${sp}</div>
+      <div class="gp"><div><span>買進</span><div class="v">${it.buy?vnd(it.buy):'—'}</div><div class="t">${twd(it.buy)}</div></div>
+      <div><span>賣出</span><div class="v">${it.sell?vnd(it.sell):'—'}</div><div class="t">${twd(it.sell)}</div></div></div></div>`;
+  }).join('') : '<div class="muted">查無資料</div>';
+}
+async function loadGold(){
+  $('#gRefresh').disabled=true; $('#gRefresh').textContent='查詢中…';
+  let G=null;
+  try{
+    if(S.gas){
+      const j=await getJSON(S.gas);
+      G={fetched:Date.now(), items:j.items||[], errors:j.errors||[]};
+    } else {
+      const j=await getJSON(PNJ_URL);
+      G={fetched:Date.now(), errors:['DOJI、寶信明珠、SJC（未設定 Apps Script）'],
+        items:(j.data||[]).filter(x=>/nhẫn/i.test(x.tensp)).map(x=>({brand:'PNJ',name:x.tensp,buy:x.giamua*1000,sell:x.giaban*1000,updated:j.updateDate||''}))};
+    }
+    localStorage.setItem('fx_gold', JSON.stringify(G)); toast('已更新 ✓');
+  }catch(e){ toast(S.gas?'查詢失敗，請檢查網路或 Apps Script':'PNJ 無法直接查詢，請在設定填 Apps Script 網址'); }
+  $('#gRefresh').disabled=false; $('#gRefresh').textContent='↻ 查詢';
+  renderGold();
+}
+$('#gRefresh').onclick=loadGold;
+$('#sGas').onchange=()=>{ S.gas=$('#sGas').value.trim(); save(); toast('已儲存'); };
+
+// ---------- calculator ----------
+function calcEval(src){
+  const t=src.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-'); let i=0;
+  const pk=()=>t[i];
+  function num(){ const st=i; while(i<t.length&&/[\d.]/.test(t[i])) i++; if(st===i) throw 0; return parseFloat(t.slice(st,i)); }
+  function factor(){ let neg=false; while(pk()==='-'){neg=!neg;i++;} let v;
+    if(pk()==='('){ i++; v=expr().v; if(pk()===')') i++; } else v=num();
+    let pct=false; while(pk()==='%'){ if(pct) v/=100; pct=true; i++; }
+    return {v:neg?-v:v,pct}; }
+  function term(){ let f=factor();
+    while(pk()==='*'||pk()==='/'){ const op=t[i++], g=factor(); const a=f.pct?f.v/100:f.v, b=g.pct?g.v/100:g.v; f={v:op==='*'?a*b:a/b,pct:false}; }
+    return f; }
+  function expr(){ const l=term(); let lv=l.pct?l.v/100:l.v;
+    while(pk()==='+'||pk()==='-'){ const op=t[i++], r=term(); const rv=r.pct?lv*r.v/100:r.v; lv=op==='+'?lv+rv:lv-rv; }
+    return {v:lv,pct:false}; }
+  const r=expr(); if(i<t.length) throw 0; return r.v;
+}
+const tidy=v=>Number(v.toPrecision(12));
+const fmtK=v=>!isFinite(v)?'錯誤':tidy(v).toLocaleString('en-US',{maximumFractionDigits:10});
+const commas=s=>s.replace(/\d+(\.\d*)?/g,m=>{ const [a,b]=m.split('.'); return a.replace(/\B(?=(\d{3})+(?!\d))/g,',')+(b!==undefined?'.'+b:''); });
+let kDone=false;
+function renderCalc(){
+  const e=S.calc||'';
+  $('#kExpr').textContent = e ? commas(e) : '0';
+  $('#kExpr').classList.toggle('done', kDone);
+  let r='';
+  if(!kDone && /[+−×÷%(]/.test(e)){ try{ r='= '+fmtK(calcEval(e.replace(/[+−×÷(]+$/,''))); }catch(x){} }
+  $('#kRes').textContent=r;
+}
+function calcKey(k){
+  let e=S.calc||''; const last=e.slice(-1), seg=e.split(/[+−×÷()%]/).pop();
+  const isOp=c=>'+−×÷'.includes(c);
+  if(kDone && /^[\d.]$/.test(k)) e='';
+  kDone=false;
+  if(k==='C') e='';
+  else if(k==='BS') e=e.slice(0,-1);
+  else if(k==='='){
+    if(!e) return;
+    try{ const v=calcEval(e.replace(/[+−×÷(]+$/,'')); if(!isFinite(v)) throw 0;
+      const res=String(tidy(v));
+      S.hist=[{e,r:res},...(S.hist||[])].slice(0,20); e=res; kDone=true;
+    }catch(x){ toast('算式有誤'); return; }
+  }
+  else if(isOp(k)){
+    if(!e||last==='('){ if(k==='−') e+=k; else return; }
+    else if(isOp(last)){ if(k==='−'&&(last==='×'||last==='÷')) e+=k; else { e=e.replace(/[+−×÷]+$/,''); if(!e) return; e+=k; } }
+    else e+=k;
+  }
+  else if(k==='%'){ if(/[\d)]/.test(last)) e+='%'; else return; }
+  else if(k==='()'){
+    const open=(e.match(/\(/g)||[]).length-(e.match(/\)/g)||[]).length;
+    if(open>0 && /[\d)%]/.test(last)) e+=')';
+    else e += /[\d)%.]/.test(last) ? '×(' : '(';
+  }
+  else if(k==='.'){ if(seg.includes('.')) return; e += /\d/.test(last) ? '.' : ((/[)%]/.test(last)?'×':'')+'0.'); }
+  else { if(e.length>=40) return; if(/[)%]/.test(last)) e+='×'; if(seg==='0') e=e.slice(0,-1); e+=k; }
+  S.calc=e; save(); renderCalc();
+}
+$('#kPad').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b){ navigator.vibrate?.(8); calcKey(b.dataset.k);} });
+$('#kRes').onclick=()=>{ try{ const v=calcEval((S.calc||'').replace(/[+−×÷(]+$/,'')); navigator.clipboard?.writeText(String(tidy(v))).then(()=>toast('已複製')); }catch(x){} };
+$('#kExpr').onclick=()=>{ if(kDone) navigator.clipboard?.writeText(S.calc).then(()=>toast('已複製')); };
+function openHist(){
+  const H=S.hist||[];
+  $('#histList').innerHTML = H.length ? H.map((h,i)=>`<div class="cr" data-h="${i}"><div class="t" style="text-align:right">${commas(h.e)}<small style="font-size:22px;color:#fff">= ${fmtK(+h.r)}</small></div></div>`).join('') : '<div class="muted">尚無紀錄</div>';
+  $('#histModal').classList.add('on');
+}
+$('#kHist').onclick=openHist;
+$('#histClose').onclick=()=>$('#histModal').classList.remove('on');
+$('#histModal').onclick=e=>{ if(e.target.id==='histModal') $('#histModal').classList.remove('on'); };
+$('#histClr').onclick=()=>{ S.hist=[]; save(); openHist(); };
+$('#histList').onclick=e=>{ const r=e.target.closest('[data-h]'); if(!r) return; S.calc=S.hist[+r.dataset.h].r; kDone=true; save(); renderCalc(); $('#histModal').classList.remove('on'); };
+document.querySelectorAll('.seg [data-m]').forEach(b=>b.onclick=()=>{
+  const m=b.dataset.m; document.querySelectorAll('.seg [data-m]').forEach(x=>x.classList.toggle('on',x===b));
+  $('#calcBox').style.display=m==='calc'?'flex':'none'; $('#unitBox').style.display=m==='unit'?'flex':'none';
+  $('#kHist').style.visibility=m==='calc'?'visible':'hidden';
+  S.cmode=m; save(); if(m==='unit') renderUnit();
+});
+
+// ---------- unit converter ----------
+const UNITS={
+  weight:['重量',[['g','克',1],['kg','公斤',1000],['lb','磅',453.59237],['oz','盎司',28.349523125],['ozt','金衡盎司',31.1034768],['chi','chỉ（越南）',3.75],['luong','lượng（越南）',37.5],['qian','錢（台灣）',3.75],['liang','台兩',37.5],['jin','台斤',600],['mg','毫克',0.001]],['lb','kg']],
+  length:['長度',[['mm','毫米',.001],['cm','公分',.01],['m','公尺',1],['km','公里',1000],['in','英寸',.0254],['ft','英尺',.3048],['yd','碼',.9144],['mi','英里',1609.344],['tc','台尺',10/33]],['in','cm']],
+  area:['面積',[['m2','平方公尺',1],['ping','坪',400/121],['cm2','平方公分',1e-4],['ha','公頃',1e4],['km2','平方公里',1e6],['ft2','平方英尺',0.09290304],['acre','英畝',4046.8564224],['jia','甲',9699.17]],['ping','m2']],
+  temp:['溫度',[['C','攝氏 °C'],['F','華氏 °F'],['K','克氏 K']],['F','C']],
+  volume:['體積',[['ml','毫升',.001],['l','公升',1],['m3','立方公尺',1000],['gal','加侖（美）',3.785411784],['floz','液量盎司',0.0295735295625],['cup','杯（240mL）',.24]],['gal','l']],
+  speed:['速率',[['kmh','公里/時',1/3.6],['ms','公尺/秒',1],['mph','英里/時',0.44704],['kn','節',1852/3600]],['mph','kmh']]
+};
+S.u = S.u || {cat:'weight', sel:{}, val:'1', act:0};
+const toC={C:v=>v,F:v=>(v-32)*5/9,K:v=>v-273.15}, fromC={C:v=>v,F:v=>v*9/5+32,K:v=>v+273.15};
+function uSel(){ const c=S.u.cat; if(!S.u.sel[c]) S.u.sel[c]=[...UNITS[c][2]]; return S.u.sel[c]; }
+function uConv(v,a,b){
+  if(S.u.cat==='temp') return fromC[b](toC[a](v));
+  const U=Object.fromEntries(UNITS[S.u.cat][1].map(x=>[x[0],x[2]])); return v*U[a]/U[b];
+}
+const fmtU=v=>!isFinite(v)?'—':Number(v.toPrecision(10)).toLocaleString('en-US',{maximumFractionDigits:10});
+function renderUnit(){
+  $('#uCats').innerHTML=Object.entries(UNITS).map(([k,v])=>`<button data-c="${k}" class="${k===S.u.cat?'on':''}">${v[0]}</button>`).join('');
+  const sel=uSel(), opts=UNITS[S.u.cat][1].map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
+  [0,1].forEach(i=>{ $('#u'+i).innerHTML=opts; $('#u'+i).value=sel[i]; });
+  const a=S.u.act, v=parseFloat(S.u.val)||0;
+  const other=uConv(v, sel[a], sel[1-a]);
+  $('#uv'+a).innerHTML=(S.u.val?commas(S.u.val):'0')+'<span class="cursor"></span>';
+  $('#uv'+(1-a)).textContent=fmtU(other);
+  document.querySelectorAll('.ufield').forEach(f=>f.classList.toggle('on',+f.dataset.i===a));
+}
+function uSwitch(i){ if(i===S.u.act) return; const sel=uSel(); const v=uConv(parseFloat(S.u.val)||0, sel[S.u.act], sel[i]); S.u.act=i; S.u.val=String(Number(v.toPrecision(10))); save(); renderUnit(); }
+$('#uCats').onclick=e=>{ const c=e.target.dataset.c; if(!c) return; S.u.cat=c; S.u.act=0; S.u.val='1'; save(); renderUnit(); };
+[0,1].forEach(i=>{ $('#u'+i).onchange=()=>{ uSel()[i]=$('#u'+i).value; save(); renderUnit(); }; });
+document.querySelectorAll('.ufield').forEach(f=>f.addEventListener('click',e=>{ if(e.target.tagName!=='SELECT') uSwitch(+f.dataset.i); }));
+$('#uPad').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b) return; navigator.vibrate?.(8);
+  const k=b.dataset.k; let v=S.u.val;
+  if(k==='UP') return uSwitch(0); if(k==='DN') return uSwitch(1);
+  if(k==='C') v=''; else if(k==='BS') v=v.slice(0,-1);
+  else if(k==='PM') v = v.startsWith('-')?v.slice(1):'-'+v;
+  else if(k==='.'){ if(v.includes('.')) return; v += /\d$/.test(v)?'.':'0.'; }
+  else { if(v.replace('-','').length>=15) return; if(v==='0') v=''; if(v==='-0') v='-'; v+=k; }
+  S.u.val=v; save(); renderUnit();
+});
+
+// ---------- nav ----------
+let chartLoaded=false;
+$('#nav').onclick = e=>{
+  const b=e.target.closest('button'); if(!b) return; const v=b.dataset.v;
+  [...$('#nav').children].forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on', x.id==='v-'+v));
+  if(v==='chart'){ if(!chartLoaded){ chartLoaded=true; loadChart(); } else drawChart(); }
+  if(v==='set'){ renderSetList(); renderMyRef(); renderMyList(); }
+  if(v==='calc'){ renderCalc(); renderUnit(); }
+  if(v==='gold'){ renderGold(); let G=null; try{G=JSON.parse(localStorage.getItem('fx_gold')||'null');}catch(e){} if(!G||Date.now()-G.fetched>1800e3) loadGold(); }
+};
+$('#btnRefresh').onclick = ()=>loadRates(true);
+
+// ---------- init ----------
+$('#ver').textContent=VERSION;
+if(S.cmode==='unit') document.querySelector('.seg [data-m="unit"]').click();
+$('#sPrec').value=S.prec; $('#sGas').value=S.gas||'';
+$('#cFrom').value=S.chart.from; $('#cTo').value=S.chart.to; $('#cAmt').value=S.chart.amt;
+$('#mFrom').value=S.myFrom; $('#mTo').value=S.myTo;
+showUpd(); renderConv();
+// 超過 1 小時才自動更新
+if(!R || Date.now()-R.fetched > 3600e3) loadRates(false);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && R && Date.now()-R.fetched > 3600e3) loadRates(false); });
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
