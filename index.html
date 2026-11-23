@@ -127,7 +127,33 @@ canvas{width:100%;height:280px;display:block;touch-action:none}
 .sheet{background:var(--panel);width:100%;max-height:85dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column}
 .sheet h3{margin:0;padding:16px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
 .sheet .list{overflow-y:auto;padding:0 14px 14px}
+/* v1.3.0 黃金 */
+#gSeg button[data-g]{flex:1;padding:7px 0;font-size:16px;border-radius:12px;border:1px solid var(--line);background:var(--row);color:#fff}
+#gSeg button.on{background:var(--act);border-color:var(--act);font-weight:700}
+.gmeta{font-size:12px;color:var(--sub);line-height:1.5;margin:4px 2px 8px}
+.gt{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.gt th{font-size:12px;color:var(--sub);font-weight:500;text-align:right;padding:2px 6px}
+.gt th:first-child{text-align:left}
+.gt td{padding:7px 6px;border-top:1px solid var(--line);text-align:right;vertical-align:top}
+.gt td:first-child{text-align:left}
+.gt .b{font-size:16px;font-weight:700;color:#fde047}
+.gt .n{font-size:11px;color:var(--sub);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gt .v{font-size:17px;font-weight:700}
+.gt .t{font-size:11px;color:var(--acc)}
+.gt tr.avg td{background:#0f3a4a}
+.gt tr.avg .b{color:#f59e0b}
+.mcard{background:var(--row);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.mh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.mh b{font-size:15px}
+.mp{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 4px}
+.mp .pv{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.mp .pc{font-size:14px;font-weight:700}
+.lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--sub);margin-top:4px}
+.lg i{display:inline-block;width:10px;height:3px;margin-right:4px;vertical-align:middle}
+.lg b{color:#fff}
+canvas.mc{width:100%;height:110px;display:block;touch-action:none}
 /* v1.2.1 精簡版面 */
+.seg button[data-m]{font-size:15px}
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 header{padding:6px 12px 4px;gap:8px}
 header h1{font-size:19px}
@@ -181,7 +207,7 @@ canvas{height:230px}
 </head>
 <body>
 <header>
-  <h1>匯率換算</h1>
+  <h1>匯率換算 <small id="hVer" style="font-size:12px;color:var(--sub);font-weight:500"></small></h1>
   <div id="upd">—</div>
   <button class="iconbtn" id="btnRefresh" title="更新匯率">↻</button>
 </header>
@@ -220,12 +246,24 @@ canvas{height:230px}
     </div>
   </section>
 
-  <!-- 金戒指 -->
+  <!-- 黃金 -->
   <section class="view" id="v-gold">
-    <div class="pad">
-      <div class="fl"><div class="muted" id="gUpd">—</div><button class="btn" id="gRefresh" style="flex:0 0 auto;width:auto;padding:10px 18px">↻ 查詢</button></div>
-      <div class="muted" style="margin-bottom:10px">9999 素面戒指，單位 VND/chỉ（1 chỉ = 3.75 克）。「買進」是店家收購價，「賣出」是你買的價格。</div>
+    <div class="seg" id="gSeg"><button data-g="ring" class="on">金戒指</button><button data-g="metal">貴金屬</button><button class="iconbtn" id="gRefresh" title="更新">↻</button></div>
+    <div class="pad" id="gRing">
+      <div class="gmeta" id="gUpd">—</div>
       <div id="gList"></div>
+      <div class="gmeta">9999 素面戒指，VND/chỉ（1 chỉ＝3.75 克）。買進＝店家收購價，賣出＝你買的價。均價＝PNJ、DOJI、寶信明珠、Phú Quý、SJC 買賣中間價平均。</div>
+    </div>
+    <div class="pad" id="gMetal" style="display:none">
+      <div class="gmeta" id="mUpd">—</div>
+      <div class="mcard">
+        <div class="mh"><b>金戒指均價 vs 國際金價</b><span class="gmeta">VND/chỉ</span></div>
+        <div class="lg"><span><i style="background:#f59e0b"></i>金戒指均價 <b id="lgRing">—</b></span><span><i style="background:#fde047"></i>黃金期貨換算 <b id="lgFut">—</b></span></div>
+        <div class="gmeta" id="lgPrem"></div>
+        <canvas class="mc" id="cvCombo" style="height:190px"></canvas>
+      </div>
+      <div id="mCards"></div>
+      <div class="gmeta">資料：Yahoo 近半年日線（GC=F、SI=F、DX-Y.NYB、^TNX，延遲約 15 分）。期貨換算＝期貨價 × 當日美元/越南盾 ÷ 8.2945（1 盎司＝8.2945 chỉ）。金戒指均價從開始記錄那天起累積。</div>
     </div>
   </section>
 
@@ -299,7 +337,7 @@ canvas{height:230px}
 <nav id="nav">
   <button data-v="conv" class="on"><span>⇆</span>換算</button>
   <button data-v="chart"><span>📈</span>圖表</button>
-  <button data-v="gold"><span>💍</span>金戒指</button>
+  <button data-v="gold"><span>💍</span>黃金</button>
   <button data-v="calc"><span>🧮</span>計算機</button>
   <button data-v="set"><span>⚙</span>設定</button>
 </nav>
@@ -315,7 +353,7 @@ canvas{height:230px}
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = 'v1.2.1';
+const VERSION = 'v1.3.0';
 const CUR = {
   USD:['美元','🇺🇸'], TWD:['新台幣','🇹🇼'], VND:['越南盾','🇻🇳'], JPY:['日圓','🇯🇵'], CNY:['人民幣','🇨🇳'],
   HKD:['港幣','🇭🇰'], EUR:['歐元','🇪🇺'], GBP:['英鎊','🇬🇧'], KRW:['韓元','🇰🇷'], SGD:['新加坡幣','🇸🇬'],
@@ -609,40 +647,125 @@ addEventListener('resize', ()=>drawChart());
 // ---------- gold ----------
 const PNJ_URL='https://edge-api.pnj.io/ecom-frontend/v1/get-gold-price?zone=00';
 function vnd(v){ return Math.round(v).toLocaleString('en-US'); }
+const MAIN_B=['PNJ','DOJI','寶信明珠','Phú Quý','SJC'];
+const gasUrl=(q)=>S.gas+(q?(S.gas.includes('?')?'&':'?')+q:'');
+const ld=k=>{ try{ return JSON.parse(localStorage.getItem(k)||'null'); }catch(e){ return null; } };
+function twRate(){ return R && R.rates.TWD && R.rates.VND ? R.rates.TWD/R.rates.VND : NaN; }
+function ringAvg(items){ const m=(items||[]).filter(x=>MAIN_B.includes(x.brand)&&x.buy&&x.sell); return m.length? m.reduce((a,x)=>a+(x.buy+x.sell)/2,0)/m.length : NaN; }
 function renderGold(){
-  let G=null; try{ G=JSON.parse(localStorage.getItem('fx_gold')||'null'); }catch(e){}
-  if(!G){ $('#gList').innerHTML='<div class="muted">按「查詢」取得最新金戒指價格</div>'; $('#gUpd').textContent=''; return; }
-  const tw = R && R.rates.TWD && R.rates.VND ? R.rates.TWD/R.rates.VND : NaN;
+  const G=ld('fx_gold');
+  if(!G){ $('#gList').innerHTML='<div class="muted">按 ↻ 取得最新金戒指價格</div>'; $('#gUpd').textContent=''; return; }
+  const tw=twRate(), twd=v=>isFinite(tw)&&v?'≈ '+Math.round(v*tw).toLocaleString('en-US')+' 台幣':'';
   const f=new Date(G.fetched).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
-  $('#gUpd').innerHTML = `查詢時間 ${f}` + (G.errors&&G.errors.length ? `<br>缺：${G.errors.join('、')}` : '');
+  $('#gUpd').textContent = `查詢 ${f}` + (G.errors&&G.errors.length ? `　缺：${G.errors.join('、')}` : '　五大品牌完整');
   const items=[...G.items].sort((a,b)=>a.sell-b.sell);
-  $('#gList').innerHTML = items.length ? items.map(it=>{
-    const sp = it.sell&&it.buy ? ((it.sell/it.buy-1)*100).toFixed(1)+'%' : '—';
-    const twd = v => isFinite(tw)&&v ? `≈ ${Math.round(v*tw).toLocaleString('en-US')} 台幣` : '';
-    return `<div class="gold"><div class="gh"><b>${it.brand}</b><small>${it.updated||''}</small></div>
-      <div class="gn">${it.name}　價差 ${sp}</div>
-      <div class="gp"><div><span>買進</span><div class="v">${it.buy?vnd(it.buy):'—'}</div><div class="t">${twd(it.buy)}</div></div>
-      <div><span>賣出</span><div class="v">${it.sell?vnd(it.sell):'—'}</div><div class="t">${twd(it.sell)}</div></div></div></div>`;
-  }).join('') : '<div class="muted">查無資料</div>';
+  const avg=ringAvg(items);
+  const row=it=>`<tr><td><div class="b">${it.brand}</div><div class="n">差${((it.sell/it.buy-1)*100).toFixed(1)}% · ${it.name}</div></td>
+    <td><div class="v">${vnd(it.buy)}</div><div class="t">${twd(it.buy)}</div></td>
+    <td><div class="v">${vnd(it.sell)}</div><div class="t">${twd(it.sell)}</div></td></tr>`;
+  $('#gList').innerHTML = items.length ? `<table class="gt"><tr><th>品牌</th><th>買進</th><th>賣出</th></tr>${items.map(row).join('')}
+    ${isFinite(avg)?`<tr class="avg"><td><div class="b">均價</div><div class="n">五大品牌中間價</div></td><td colspan="2"><div class="v">${vnd(avg)}</div><div class="t">${twd(avg)}</div></td></tr>`:''}</table>` : '<div class="muted">查無資料</div>';
 }
 async function loadGold(){
-  $('#gRefresh').disabled=true; $('#gRefresh').textContent='查詢中…';
-  let G=null;
+  $('#gRefresh').disabled=true;
   try{
-    if(S.gas){
-      const j=await getJSON(S.gas);
-      G={fetched:Date.now(), items:j.items||[], errors:j.errors||[]};
-    } else {
-      const j=await getJSON(PNJ_URL);
-      G={fetched:Date.now(), errors:['DOJI、寶信明珠、SJC（未設定 Apps Script）'],
-        items:(j.data||[]).filter(x=>/nhẫn/i.test(x.tensp)).map(x=>({brand:'PNJ',name:x.tensp,buy:x.giamua*1000,sell:x.giaban*1000,updated:j.updateDate||''}))};
-    }
+    let G;
+    if(S.gas){ const j=await getJSON(gasUrl()); G={fetched:Date.now(), items:j.items||[], errors:j.errors||[]}; }
+    else { const j=await getJSON(PNJ_URL); G={fetched:Date.now(), errors:['DOJI','寶信明珠','Phú Quý','SJC'],
+      items:(j.data||[]).filter(x=>/nhẫn/i.test(x.tensp)).map(x=>({brand:'PNJ',name:x.tensp,buy:x.giamua*1000,sell:x.giaban*1000}))}; }
     localStorage.setItem('fx_gold', JSON.stringify(G)); toast('已更新 ✓');
-  }catch(e){ toast(S.gas?'查詢失敗，請檢查網路或 Apps Script':'PNJ 無法直接查詢，請在設定填 Apps Script 網址'); }
-  $('#gRefresh').disabled=false; $('#gRefresh').textContent='↻ 查詢';
-  renderGold();
+  }catch(e){ toast(S.gas?'查詢失敗，請檢查網路或 Apps Script':'請在設定填 Apps Script 網址'); }
+  $('#gRefresh').disabled=false; renderGold();
 }
-$('#gRefresh').onclick=loadGold;
+// ---- 貴金屬 ----
+async function loadMetals(){
+  if(!S.gas){ $('#mUpd').textContent='請先在設定填 Apps Script 網址'; return; }
+  $('#gRefresh').disabled=true; $('#mUpd').textContent='讀取中…';
+  try{
+    const j=await getJSON(gasUrl('action=metals'));
+    if(!j.metals) throw 0;
+    j.fetched=Date.now(); localStorage.setItem('fx_metals', JSON.stringify(j)); toast('已更新 ✓');
+  }catch(e){ toast('貴金屬讀取失敗（Apps Script 需更新到 v1.3.0）'); }
+  $('#gRefresh').disabled=false; renderMetals();
+}
+const MSYM=[['GC=F','黃金 Gold','#fde047','$','/oz',2],['SI=F','白銀 Silver','#cbd5e1','$','/oz',2],['RATIO','金銀比','#f59e0b','','',1],['DX-Y.NYB','美元指數 DXY','#c084fc','','',2],['^TNX','美債10年殖利率','#60a5fa','','%',2]];
+function renderMetals(){
+  const M=ld('fx_metals');
+  if(!M){ $('#mUpd').textContent=S.gas?'按 ↻ 讀取':'請先在設定填 Apps Script 網址'; return; }
+  const f=new Date(M.fetched).toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});
+  $('#mUpd').textContent=`更新 ${f}`+(M.errors&&M.errors.length?`　缺：${M.errors.join('、')}`:'　五項資料完整');
+  const ms=M.metals||{}, g=ms['GC=F'], si=ms['SI=F'], vn=ms['VND=X'];
+  // 比較圖：期貨換算 VND/chỉ
+  const vmap={}; (vn&&vn.series||[]).forEach(x=>vmap[x.d]=x.c);
+  const vdates=Object.keys(vmap).sort(); const curV = R&&R.rates.VND || (vn&&vn.price);
+  const vAt=d=>{ let v=null; for(const k of vdates){ if(k<=d) v=vmap[k]; else break; } return v||curV; };
+  const fut=(g&&g.series||[]).map(x=>({d:x.d,v:x.c*vAt(x.d)/8.2945}));
+  const ring=(M.ringHist||[]).map(x=>({d:x.d,v:x.v}));
+  const G=ld('fx_gold'), ga=G?ringAvg(G.items):NaN;
+  if(isFinite(ga)){ const d=new Date(G.fetched).toISOString().slice(0,10); if(!ring.length||ring[ring.length-1].d<d) ring.push({d,v:ga}); }
+  const lf=fut.length?fut[fut.length-1].v:NaN, lr=ring.length?ring[ring.length-1].v:NaN;
+  $('#lgFut').textContent=isFinite(lf)?vnd(lf):'—'; $('#lgRing').textContent=isFinite(lr)?vnd(lr):'—';
+  $('#lgPrem').textContent = isFinite(lf)&&isFinite(lr) ? `越南溢價 ${((lr/lf-1)*100).toFixed(1)}%（金戒指均價比國際金價貴多少）`+(ring.length<5?`　金戒指已記錄 ${ring.length} 天`:'') : '';
+  drawLines($('#cvCombo'),[{pts:fut,color:'#fde047',name:'期貨'},{pts:ring,color:'#f59e0b',name:'戒指',dots:ring.length<10}],v=>(v/1e6).toFixed(2)+'M');
+  // 各項小卡
+  const ratio = g&&si ? (()=>{ const sm={}; si.series.forEach(x=>sm[x.d]=x.c); const pts=g.series.filter(x=>sm[x.d]).map(x=>({d:x.d,c:x.c/sm[x.d]}));
+    const p=g.price/si.price, pv=pts.length>1?pts[pts.length-2].c:null; return {price:p,pct:pv?(p/pv-1)*100:null,series:pts}; })() : null;
+  $('#mCards').innerHTML = MSYM.map(([k,nm])=>`<div class="mcard" id="mc_${k.replace(/\W/g,'')}"></div>`).join('');
+  MSYM.forEach(([k,nm,col,pre,unit,dp])=>{
+    const d = k==='RATIO'?ratio:ms[k], el=$('#mc_'+k.replace(/\W/g,''));
+    if(!d||!d.series||!d.series.length){ el.innerHTML=`<div class="mh"><b>${nm}</b></div><div class="gmeta">缺資料</div>`; return; }
+    const up=(d.pct||0)>=0, ff=v=>pre+Number(v).toLocaleString('en-US',{minimumFractionDigits:dp,maximumFractionDigits:dp});
+    el.innerHTML=`<div class="mh"><b style="color:${col}">${nm}</b><span class="gmeta">${k==='RATIO'?'黃金÷白銀':k}</span></div>
+      <div class="mp"><span class="pv">${ff(d.price)}<small style="font-size:12px;color:var(--sub)">${unit}</small></span>
+      <span class="pc" style="color:${up?'var(--up)':'var(--down)'}">${d.pct==null?'':(up?'▲ +':'▼ ')+d.pct.toFixed(2)+'%'}</span></div>
+      <canvas class="mc"></canvas>`;
+    drawLines(el.querySelector('canvas'),[{pts:d.series.map(x=>({d:x.d,v:x.c})),color:col,mark:true}],ff);
+  });
+}
+// 通用折線圖：lines=[{pts:[{d,v}],color,mark,dots}]
+function drawLines(cv,lines,fy){
+  cv._l=lines; cv._f=fy; paintLines(cv);
+  if(!cv._h){ cv._h=1;
+    const at=e=>{ const r=cv.getBoundingClientRect(), D=cv._dates||[]; if(D.length<2) return; const fr=(e.clientX-r.left-6)/(r.width-12); cv._hv=Math.max(0,Math.min(D.length-1,Math.round(fr*(D.length-1)))); paintLines(cv); };
+    cv.addEventListener('pointerdown',e=>{ cv.setPointerCapture(e.pointerId); at(e); });
+    cv.addEventListener('pointermove',e=>{ if(e.buttons||e.pointerType==='touch') at(e); });
+    cv.addEventListener('pointerup',()=>setTimeout(()=>{ cv._hv=null; paintLines(cv); },1500));
+  }
+}
+function paintLines(cv){
+  const lines=cv._l, fy=cv._f, c=cv.getContext('2d'), dpr=devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+  if(!W) return;
+  cv.width=W*dpr; cv.height=H*dpr; c.setTransform(dpr,0,0,dpr,0,0); c.clearRect(0,0,W,H);
+  const D=[...new Set(lines.flatMap(l=>l.pts.map(p=>p.d)))].sort(); cv._dates=D;
+  const all=lines.flatMap(l=>l.pts.map(p=>p.v)).filter(isFinite);
+  if(D.length<2||!all.length){ c.fillStyle='#c9d6e2'; c.font='13px system-ui'; c.fillText('資料不足',8,20); return; }
+  const mk=lines.some(l=>l.mark), mn=Math.min(...all), mx=Math.max(...all), sp=(mx-mn)||mx*0.01||1, lo=mn-sp*(mk?0.35:0.12), hi=mx+sp*(mk?0.3:0.15);
+  const L=6, Rr=W-6, T=14, B=H-18, idx={}; D.forEach((d,i)=>idx[d]=i);
+  const X=d=>L+(Rr-L)*idx[d]/(D.length-1), Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  c.font='11px system-ui'; c.strokeStyle='#2a3a49'; c.lineWidth=1; c.fillStyle='#93a4b8';
+  [lo+(hi-lo)*0.1,(lo+hi)/2,hi-(hi-lo)*0.1].forEach(v=>{ const y=Y(v); c.beginPath(); c.moveTo(L,y); c.lineTo(Rr,y); c.stroke(); if(!mk){ c.fillText(fy(v),L+1,y-3); } });
+  [0,Math.floor((D.length-1)/2),D.length-1].forEach((i,k)=>{ c.textAlign=k===0?'left':k===2?'right':'center'; c.fillText(D[i].slice(5).replace('-','/'),X(D[i]),H-4); });
+  c.textAlign='left';
+  lines.forEach(l=>{ if(!l.pts.length) return;
+    c.beginPath(); l.pts.forEach((p,i)=>i?c.lineTo(X(p.d),Y(p.v)):c.moveTo(X(p.d),Y(p.v))); c.strokeStyle=l.color; c.lineWidth=2; c.stroke();
+    if(l.dots||l.pts.length===1){ c.fillStyle=l.color; l.pts.forEach(p=>{ c.beginPath(); c.arc(X(p.d),Y(p.v),3,0,7); c.fill(); }); }
+    if(l.mark){ const vs=l.pts.map(p=>p.v), iH=vs.indexOf(Math.max(...vs)), iL=vs.indexOf(Math.min(...vs)), last=l.pts[l.pts.length-1];
+      [[l.pts[iH],'#f87171','高 '],[l.pts[iL],'#4ade80','低 ']].forEach(([p,col,t])=>{ const x=X(p.d),y=Y(p.v); c.fillStyle=col; c.beginPath(); c.arc(x,y,3.5,0,7); c.fill();
+        c.font='bold 11px system-ui'; const s=t+fy(p.v), w=c.measureText(s).width; c.fillText(s,Math.min(Math.max(x-w/2,L),Rr-w), t==='高 '?y-6:y+14); });
+      c.fillStyle='#fff'; c.beginPath(); c.arc(X(last.d),Y(last.v),3,0,7); c.fill(); }
+  });
+  if(cv._hv!=null){ const d=D[cv._hv], x=X(d); c.strokeStyle='#fff'; c.lineWidth=1; c.beginPath(); c.moveTo(x,T); c.lineTo(x,B); c.stroke();
+    const parts=lines.map(l=>{ const p=l.pts.find(q=>q.d===d); return p?(l.name?l.name+' ':'')+fy(p.v):null; }).filter(Boolean);
+    const s=d.slice(5)+'  '+parts.join('  '); c.font='bold 12px system-ui'; const w=c.measureText(s).width+12, bx=Math.min(Math.max(x-w/2,L),Rr-w);
+    c.fillStyle='#000d'; c.fillRect(bx,0,w,20); c.fillStyle='#fff'; c.fillText(s,bx+6,14); }
+}
+let gMode='ring';
+document.querySelectorAll('#gSeg [data-g]').forEach(b=>b.onclick=()=>{
+  gMode=b.dataset.g; document.querySelectorAll('#gSeg [data-g]').forEach(x=>x.classList.toggle('on',x===b));
+  $('#gRing').style.display=gMode==='ring'?'block':'none'; $('#gMetal').style.display=gMode==='metal'?'block':'none';
+  if(gMode==='metal'){ renderMetals(); const M=ld('fx_metals'); if(!M||Date.now()-M.fetched>1800e3) loadMetals(); }
+});
+$('#gRefresh').onclick=()=>gMode==='ring'?loadGold():loadMetals();
 $('#sGas').onchange=()=>{ S.gas=$('#sGas').value.trim(); save(); toast('已儲存'); };
 
 // ---------- calculator ----------
@@ -774,12 +897,12 @@ $('#nav').onclick = e=>{
   if(v==='chart'){ if(!chartLoaded){ chartLoaded=true; loadChart(); } else drawChart(); }
   if(v==='set'){ renderSetList(); renderMyRef(); renderMyList(); }
   if(v==='calc'){ renderCalc(); renderUnit(); }
-  if(v==='gold'){ renderGold(); let G=null; try{G=JSON.parse(localStorage.getItem('fx_gold')||'null');}catch(e){} if(!G||Date.now()-G.fetched>1800e3) loadGold(); }
+  if(v==='gold'){ if(gMode==='metal'){ renderMetals(); } else { renderGold(); const G=ld('fx_gold'); if(!G||Date.now()-G.fetched>1800e3) loadGold(); } }
 };
 $('#btnRefresh').onclick = ()=>loadRates(true);
 
 // ---------- init ----------
-$('#ver').textContent=VERSION;
+$('#ver').textContent=VERSION; $('#hVer').textContent=VERSION;
 if(S.cmode==='unit') document.querySelector('.seg [data-m="unit"]').click();
 $('#sPrec').value=S.prec; $('#sGas').value=S.gas||'';
 $('#cFrom').value=S.chart.from; $('#cTo').value=S.chart.to; $('#cAmt').value=S.chart.amt;
