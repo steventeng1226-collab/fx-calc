@@ -127,6 +127,56 @@ canvas{width:100%;height:280px;display:block;touch-action:none}
 .sheet{background:var(--panel);width:100%;max-height:85dvh;border-radius:18px 18px 0 0;display:flex;flex-direction:column}
 .sheet h3{margin:0;padding:16px;font-size:20px;display:flex;justify-content:space-between;align-items:center}
 .sheet .list{overflow-y:auto;padding:0 14px 14px}
+/* v1.2.1 精簡版面 */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+header{padding:6px 12px 4px;gap:8px}
+header h1{font-size:19px}
+#upd{font-size:12px}
+.iconbtn{width:38px;height:38px;font-size:18px;border-radius:10px}
+#rows{padding:2px 8px}
+.row{min-height:50px;padding:5px 10px;margin:4px 0;gap:8px;border-radius:12px}
+.flag{font-size:24px}
+.cc{min-width:56px}
+.cc b{font-size:17px}
+.cc small{font-size:11px}
+.val .n{font-size:23px}
+.val .e{font-size:13px}
+.cursor{height:20px;width:2px}
+#keypad{gap:6px;padding:8px}
+#keypad button{height:46px;font-size:22px;border-radius:10px}
+#keypad .fn{font-size:18px}
+nav button{font-size:12px;padding:4px 0 6px}
+nav button span{font-size:18px}
+.pad{padding:8px 12px}
+select,input{font-size:17px;padding:8px}
+.pair{padding:8px}
+.big{font-size:28px;margin:8px 4px 0}
+.chg{font-size:15px;margin:0 4px 6px}
+.ranges button{padding:7px 0;font-size:15px}
+.mm{font-size:15px}
+canvas{height:230px}
+.card{padding:12px;margin-bottom:10px}
+.card h3{font-size:17px}
+.cr{font-size:17px;padding:8px 0}
+.set{font-size:17px;padding:10px 0}
+.btn{padding:11px;font-size:17px}
+.gold{padding:10px 12px;margin-bottom:8px}
+.gold .gh b{font-size:18px}
+.gold .gn{font-size:14px;margin-bottom:6px}
+.gold .gp .v{font-size:20px}
+.gold .gp span,.gold .gp .t{font-size:13px}
+.seg{padding:4px 8px;gap:6px}
+.seg button[data-m]{padding:7px 0;font-size:16px}
+#kExpr{font-size:28px}
+#kExpr.done{font-size:38px}
+#kRes{font-size:22px;min-height:28px}
+.kp4{gap:6px;padding:8px}
+.kp4 button{height:52px;font-size:24px;border-radius:12px}
+.ucats button{padding:6px 13px;font-size:15px}
+.ufield{padding:8px 10px;margin:6px 8px 0}
+.ufield select{font-size:16px;padding:5px 8px}
+.uv{font-size:30px;margin-top:4px}
+.toast{bottom:90px;font-size:15px}
 </style>
 </head>
 <body>
@@ -265,7 +315,7 @@ canvas{width:100%;height:280px;display:block;touch-action:none}
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = 'v1.2.0';
+const VERSION = 'v1.2.1';
 const CUR = {
   USD:['美元','🇺🇸'], TWD:['新台幣','🇹🇼'], VND:['越南盾','🇻🇳'], JPY:['日圓','🇯🇵'], CNY:['人民幣','🇨🇳'],
   HKD:['港幣','🇭🇰'], EUR:['歐元','🇪🇺'], GBP:['英鎊','🇬🇧'], KRW:['韓元','🇰🇷'], SGD:['新加坡幣','🇸🇬'],
